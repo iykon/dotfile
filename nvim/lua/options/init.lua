@@ -1,7 +1,6 @@
 vim.cmd('filetype plugin indent on')
 vim.o.shortmess = vim.o.shortmess .. 'c'
 vim.o.hidden = true
-vim.g.mapleader = ' '
 vim.o.whichwrap = 'b,s,<,>,[,],h,l'
 vim.o.pumheight = 10
 --vim.o.fileencoding = 'utf-8'
@@ -15,7 +14,7 @@ vim.o.showmode = false
 vim.o.updatetime = 300
 vim.o.timeoutlen = 500
 vim.o.clipboard = 'unnamedplus'
-vim.o.hlsearch = false
+vim.o.hlsearch = true
 vim.o.scrolloff = 10
 vim.o.sidescrolloff = 10
 vim.o.mouse = "a"
