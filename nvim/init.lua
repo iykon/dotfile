@@ -7,8 +7,8 @@ require("treesitter-config")
 require("telescope-config")
 require("whichkey-config")
 require("keybindings")
+require("cmp-config")
 vim.o.background = "dark" -- or "light" for light mode
 vim.cmd([[
 colorscheme gruvbox
-NvimTreeOpen
 ]])
