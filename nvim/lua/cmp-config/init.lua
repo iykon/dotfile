@@ -68,6 +68,10 @@ require'lspconfig'.html.setup {
     capabilities = capabilities
 }
 
+-- require'lspconfig'.rust_analyzer.setup {
+    -- capabilities = capabilities
+-- }
+
 require'lspconfig'.clangd.setup {
     on_attach = function(client, bufnr)
         client.server_capabilities.signatureHelpProvider = false
