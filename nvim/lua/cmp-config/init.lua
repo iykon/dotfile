@@ -62,11 +62,12 @@ cmp.setup.cmdline(':', {
 })
 
 -- Set up lspconfig.
-local capabilities = require('cmp_nvim_lsp').default_capabilities()
+local capabilities = require'cmp_nvim_lsp'.default_capabilities()
 -- Replace <YOUR_LSP_SERVER> with each lsp server you've enabled.
 require'lspconfig'.html.setup {
     capabilities = capabilities
 }
+
 
 -- require'lspconfig'.rust_analyzer.setup {
     -- capabilities = capabilities
@@ -77,6 +78,32 @@ require'lspconfig'.clangd.setup {
         client.server_capabilities.signatureHelpProvider = false
         on_attach(client, bufnr)
     end,
+    capabilities = capabilities,
+}
+
+local lsp_attach = function(client, buf)
+	-- Example maps, set your own with vim.api.nvim_buf_set_keymap(buf, "n", <lhs>, <rhs>, { desc = <desc> })
+	-- or a plugin like which-key.nvim
+	-- <lhs>        <rhs>                        <desc>
+	-- "K"          vim.lsp.buf.hover            "Hover Info"
+	-- "<leader>qf" vim.diagnostic.setqflist     "Quickfix Diagnostics"
+	-- "[d"         vim.diagnostic.goto_prev     "Previous Diagnostic"
+	-- "]d"         vim.diagnostic.goto_next     "Next Diagnostic"
+	-- "<leader>e"  vim.diagnostic.open_float    "Explain Diagnostic"
+	-- "<leader>ca" vim.lsp.buf.code_action      "Code Action"
+	-- "<leader>cr" vim.lsp.buf.rename           "Rename Symbol"
+	-- "<leader>fs" vim.lsp.buf.document_symbol  "Document Symbols"
+	-- "<leader>fS" vim.lsp.buf.workspace_symbol "Workspace Symbols"
+	-- "<leader>gq" vim.lsp.buf.formatting_sync  "Format File"
+
+	vim.api.nvim_buf_set_option(buf, "formatexpr", "v:lua.vim.lsp.formatexpr()")
+	vim.api.nvim_buf_set_option(buf, "omnifunc", "v:lua.vim.lsp.omnifunc")
+	vim.api.nvim_buf_set_option(buf, "tagfunc", "v:lua.vim.lsp.tagfunc")
+end
+
+
+-- local rust_capabilities = require'cmp_nvim_lsp'.update_capabilities(vim.lsp.protocol.make_client_capabilities())
+require('rust-tools').setup {
     capabilities = capabilities,
 }
 
