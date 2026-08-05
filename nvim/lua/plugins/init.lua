@@ -20,7 +20,7 @@ require("lazy").setup({
     { "nvim-lualine/lualine.nvim", dependencies = { "nvim-tree/nvim-web-devicons" } },
     { "nvim-tree/nvim-tree.lua", dependencies = { "nvim-tree/nvim-web-devicons" } },
     { 'akinsho/bufferline.nvim', version = "*", dependencies = 'nvim-tree/nvim-web-devicons'},
-    { 'nvim-telescope/telescope.nvim', tag = '0.1.5', dependencies = { 'nvim-lua/plenary.nvim' } },
+    { 'nvim-telescope/telescope.nvim', branch = 'master', dependencies = { 'nvim-lua/plenary.nvim' } },
     { 'hrsh7th/nvim-cmp' },
     { 'neovim/nvim-lspconfig' },
     { 'simrat39/rust-tools.nvim' },
@@ -34,5 +34,7 @@ require("lazy").setup({
     { 'hrsh7th/vim-vsnip' },
     { 'nvim-lua/plenary.nvim' },
     { 'mfussenegger/nvim-dap' },
+    { 'github/copilot.vim' },
+    { 'tpope/vim-fugitive' },
 
 })

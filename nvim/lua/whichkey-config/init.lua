@@ -8,4 +8,5 @@ wk.add({
     { "<leader>g", ":Telescope live_grep<cr>", desc = "live grep"},
     { "<leader>b", ":Telescope buffers<cr>", desc = "show buffers"},
     { "<leader>t", ":Telescope help_tags<cr>", desc = "show help tags"},
+    { "<leader>l", group = "LSP"},
 })

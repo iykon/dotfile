@@ -63,8 +63,17 @@ cmp.setup.cmdline(':', {
 
 -- Set up lspconfig.
 local capabilities = require'cmp_nvim_lsp'.default_capabilities()
+local lspconfig = require('lspconfig')
+
+local lsp_attach = function(client, buf)
+    vim.api.nvim_buf_set_option(buf, "formatexpr", "v:lua.vim.lsp.formatexpr()")
+    vim.api.nvim_buf_set_option(buf, "omnifunc", "v:lua.vim.lsp.omnifunc")
+    vim.api.nvim_buf_set_option(buf, "tagfunc", "v:lua.vim.lsp.tagfunc")
+end
+
 -- Replace <YOUR_LSP_SERVER> with each lsp server you've enabled.
-require'lspconfig'.html.setup {
+lspconfig.html.setup {
+    on_attach = lsp_attach,
     capabilities = capabilities
 }
 
@@ -73,34 +82,36 @@ require'lspconfig'.html.setup {
     -- capabilities = capabilities
 -- }
 
-require'lspconfig'.clangd.setup {
+lspconfig.clangd.setup {
     on_attach = function(client, bufnr)
         client.server_capabilities.signatureHelpProvider = false
-        on_attach(client, bufnr)
+        lsp_attach(client, bufnr)
     end,
     capabilities = capabilities,
 }
 
-local lsp_attach = function(client, buf)
-	-- Example maps, set your own with vim.api.nvim_buf_set_keymap(buf, "n", <lhs>, <rhs>, { desc = <desc> })
-	-- or a plugin like which-key.nvim
-	-- <lhs>        <rhs>                        <desc>
-	-- "K"          vim.lsp.buf.hover            "Hover Info"
-	-- "<leader>qf" vim.diagnostic.setqflist     "Quickfix Diagnostics"
-	-- "[d"         vim.diagnostic.goto_prev     "Previous Diagnostic"
-	-- "]d"         vim.diagnostic.goto_next     "Next Diagnostic"
-	-- "<leader>e"  vim.diagnostic.open_float    "Explain Diagnostic"
-	-- "<leader>ca" vim.lsp.buf.code_action      "Code Action"
-	-- "<leader>cr" vim.lsp.buf.rename           "Rename Symbol"
-	-- "<leader>fs" vim.lsp.buf.document_symbol  "Document Symbols"
-	-- "<leader>fS" vim.lsp.buf.workspace_symbol "Workspace Symbols"
-	-- "<leader>gq" vim.lsp.buf.formatting_sync  "Format File"
-
-	vim.api.nvim_buf_set_option(buf, "formatexpr", "v:lua.vim.lsp.formatexpr()")
-	vim.api.nvim_buf_set_option(buf, "omnifunc", "v:lua.vim.lsp.omnifunc")
-	vim.api.nvim_buf_set_option(buf, "tagfunc", "v:lua.vim.lsp.tagfunc")
-end
-
+lspconfig.lua_ls.setup {
+    on_attach = lsp_attach,
+    capabilities = capabilities,
+    settings = {
+        Lua = {
+            runtime = {
+                version = 'LuaJIT',
+            },
+            diagnostics = {
+                globals = { 'vim' },
+            },
+            workspace = {
+                checkThirdParty = false,
+                library = vim.api.nvim_get_runtime_file("", true),
+                preloadFileSize = 10000,
+            },
+            telemetry = {
+                enable = false,
+            },
+        },
+    },
+}
 
 -- local rust_capabilities = require'cmp_nvim_lsp'.update_capabilities(vim.lsp.protocol.make_client_capabilities())
 require('rust-tools').setup {
@@ -112,12 +123,8 @@ vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
 vim.keymap.set('n', '<space>s', vim.diagnostic.setloclist)
 
-vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
-  group = vim.api.nvim_create_augroup("float_diagnostic", { clear = true }),
-  callback = function ()
-    vim.diagnostic.open_float(nil, {focus=false})
-  end
-})
+-- Clear the old auto-popup diagnostic autocmd when reloading this config.
+vim.api.nvim_create_augroup("float_diagnostic", { clear = true })
 
 vim.api.nvim_create_autocmd('LspAttach', {
   group = vim.api.nvim_create_augroup('UserLspConfig', {}),
@@ -127,24 +134,91 @@ vim.api.nvim_create_autocmd('LspAttach', {
 
     -- Buffer local mappings.
     -- See `:help vim.lsp.*` for documentation on any of the below functions
-    local opts = { buffer = ev.buf }
-    vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-    vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-    vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-    vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-    vim.keymap.set('n', '<C-s>', vim.lsp.buf.signature_help, opts)
-    vim.keymap.set('n', '<space>ka', vim.lsp.buf.add_workspace_folder, opts)
-    vim.keymap.set('n', '<space>kr', vim.lsp.buf.remove_workspace_folder, opts)
+    local opts = function(desc)
+      return { buffer = ev.buf, desc = desc }
+    end
+
+    vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts('Go to declaration'))
+    vim.keymap.set('n', 'gd', require('telescope.builtin').lsp_definitions, opts('Go to definition'))
+    vim.keymap.set('n', '<space>ld', require('telescope.builtin').lsp_definitions, opts('Go to definition'))
+    vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts('Hover documentation'))
+    vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts('Go to implementation'))
+    vim.keymap.set('n', '<space>li', vim.lsp.buf.implementation, opts('Go to implementation'))
+    vim.keymap.set('n', '<space>lf', function()
+      require('telescope.builtin').lsp_document_symbols({
+        bufnr = ev.buf,
+        symbols = { 'function', 'method', 'constructor' },
+        show_line = true,
+      })
+    end, opts('List functions in file'))
+    vim.keymap.set('n', '<space>lu', function()
+      require('telescope.builtin').lsp_references({
+        bufnr = ev.buf,
+        include_declaration = false,
+        show_line = true,
+        jump_type = 'never',
+      })
+    end, opts('Show symbol usages'))
+    vim.keymap.set('n', '<C-s>', vim.lsp.buf.signature_help, opts('Signature help'))
+    vim.keymap.set('n', '<space>ka', vim.lsp.buf.add_workspace_folder, opts('Add workspace folder'))
+    vim.keymap.set('n', '<space>kr', vim.lsp.buf.remove_workspace_folder, opts('Remove workspace folder'))
     vim.keymap.set('n', '<space>kl', function()
       print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-    end, opts)
-    vim.keymap.set('n', '<space>D', vim.lsp.buf.type_definition, opts)
-    vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
-    vim.keymap.set({ 'n', 'v' }, '<space>ca', vim.lsp.buf.code_action, opts)
-    vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+    end, opts('List workspace folders'))
+    vim.keymap.set('n', '<space>D', vim.lsp.buf.type_definition, opts('Go to type definition'))
+    vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts('Rename symbol'))
+    vim.keymap.set({ 'n', 'v' }, '<space>ca', vim.lsp.buf.code_action, opts('Code action'))
+    vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts('List references'))
     vim.keymap.set('n', '<space>n', function()
       vim.lsp.buf.format { async = true }
-    end, opts)
+    end, opts('Format buffer'))
   end,
 })
 
+vim.api.nvim_create_user_command('LspRestart', function(info)
+  local servers = info.fargs
+
+  if #servers == 0 then
+    local seen = {}
+    servers = vim
+      .iter(vim.lsp.get_clients())
+      :map(function(client)
+        return client.name
+      end)
+      :filter(function(name)
+        if seen[name] or vim.lsp.config[name] == nil then
+          return false
+        end
+
+        seen[name] = true
+        return true
+      end)
+      :totable()
+  end
+
+  for _, name in ipairs(servers) do
+    if vim.lsp.config[name] == nil then
+      vim.notify(("Invalid server name '%s'"):format(name), vim.log.levels.WARN)
+    else
+      vim.lsp.enable(name, false)
+      for _, client in ipairs(vim.lsp.get_clients({ name = name })) do
+        client:stop(true)
+      end
+    end
+  end
+
+  local timer = assert(vim.uv.new_timer())
+  timer:start(500, 0, function()
+    for _, name in ipairs(servers) do
+      if vim.lsp.config[name] ~= nil then
+        vim.schedule(function()
+          vim.lsp.enable(name)
+        end)
+      end
+    end
+    timer:close()
+  end)
+end, {
+  desc = 'Restart configured LSP servers, ignoring non-lspconfig clients like Copilot',
+  nargs = '*',
+})
